@@ -1,0 +1,40 @@
+"CICADA Scores":{
+    "CICADA2024": "CICADA2024_CICADAScore",
+    "CICADA2025": "CICADA2025_CICADAScore"
+},
+"AXO Scores": {
+    "AXOv3":"axol1tl_v3_AXOScore",
+    "AXOv4":"axol1tl_v4_AXOScore"
+},
+"CICADA working points": {
+    "CICADA2024": {
+	"CICADA VLoose": 113.0,
+	"CICADA Loose": 116.0,
+	"CICADA Medium": 121.0,
+	"CICADA Tight": 127.0,
+	"CICADA VTight": 131.0
+    },
+    "CICADA2025": {
+	"CICADA VLoose": 50.0,
+	"CICADA Loose": 60.0,
+	"CICADA Medium": 70.0,
+	"CICADA Tight": 80.0,
+	"CICADA VTight": 90.0
+    }
+},
+"AXO working points": {
+    "AXOv3": {
+	"VLoose": 289.0,
+	"Loose": 346.0,
+	"Nominal": 415.0,
+	"Tight": 456,
+	"VTight": 557.0
+    },
+    "AXOv4": {
+	"VLoose": 289.0,
+	"Loose": 346.0,
+	"Nominal": 415.0,
+	"Tight": 456,
+	"VTight": 557.0
+    }
+},

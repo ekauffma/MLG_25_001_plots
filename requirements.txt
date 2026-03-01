@@ -1,0 +1,6 @@
+snakemake
+mplhep
+numpy
+matplotlib
+rich
+pulp<2.8.0
