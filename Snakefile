@@ -11,6 +11,7 @@ rule axo_style_score_plots:
    input:
       "inputs/CICADA2024_CICADAScore_plot_info.pkl",
       "inputs/axol1tl_v3_AXOScore_plot_info.pkl",
+      "make_axo_style_score_plots.py",
    output:
       "outputs/AXOL1TL_v3_axo_style_score_plot.pdf",
       "outputs/AXOL1TL_v3_axo_style_score_plot.png",
@@ -22,6 +23,7 @@ rule axo_style_score_plots:
 rule correlation_plots:
    input:
       "inputs/correlation_dict.pkl",
+      "make_correlation_plots.py",
    output:
       "outputs/1D_correlation_plot.pdf",
       "outputs/1D_correlation_plot.png",
