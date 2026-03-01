@@ -10,13 +10,43 @@ from rich.console import Console
 
 console = Console()
 
+label_replacements = {
+    "GluGluHToGG": r"$ggH\rightarrow\gamma\gamma$",
+    "GluGluHToTauTau": r"$ggH\rightarrow\tau\tau$",
+    "SingleNeutrino": r"Simulated Zero Bias",
+    "TT": r"$t\bar{t}$ inclusive",
+    "VBFHToTauTau": r"VBF H, $H\rightarrow\tau\tau$",
+    "ZZ": r"ZZ",
+    "ZprimeToTauTau": r"$Z'\rightarrow\tau\tau$",
+    "HTo2LongLivedTo4b": r"H$\rightarrow$2 Long Lived$\rightarrow 4b$",
+    "VBFHTo2B": r"VBF H, $H\rightarrow b\bar{b}$",
+    "SUEP": r"SUEP, ($H\rightarrow$Dark Photons$\rightarrow\pi\pi$)",
+    "RunI": r"Zero Bias",
+    'Data': r'Zero Bias',
+    "data": r"Zero Bias",
+    "signal": r"signal",
+}
+
+def get_label_replacement(label):
+    try:
+        return label_replacements[label]
+    except Exception as e:
+        console.log(f'Failed to replace label: {label}')
+        console.print_exception(show_locals=True, max_frames=10)
+        raise e
+
+
 def make_1D_correlation_plot(
         snapshot_dict,
         output_path
 ):
-    x_labels = list(snapshot_dict.keys())
+    hep.style.use("CMS")
+    hep.cms.text(f"Preliminary", loc=0)
+    
+    samples = list(snapshot_dict.keys())
+    x_labels = map(get_label_replacement, samples)
     correlations = list(snapshot_dict.values())
-    x_points = np.arange(len(x_labels))
+    x_points = np.arange(len(samples))
 
     plt.plot(
         x_points,
@@ -33,7 +63,7 @@ def make_1D_correlation_plot(
         linestyle='--',
     )
 
-    plt.xticks(x_points, x_labels, rotation=90)
+    plt.xticks(x_points, x_labels, rotation=90, fontsize=14)
     plt.ylabel('Correlation Coeff.')
     plt.xlabel('Signals')
 
