@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 import os
-import yaml
 
 hep.style.use('CMS')
 
@@ -15,7 +14,15 @@ DEFAULTS = {
     "y_min": 5e-1, "y_max": 1e6,
 }
 
-def draw_hist1d(plotting_config, hist_in=None, ax=None, label="", rebin=1,
+TRIGGER_LABELS = {
+    'DST_PFScouting_ZeroBias' : 'Zero Bias',
+    'DST_PFScouting_AXONominal': 'AXOL1TL V4 Medium',
+    'DST_PFScouting_AXOVTight': 'AXOL1TL V4 Very Tight'
+}
+
+NORM = False
+
+def draw_hist1d(hist_in=None, ax=None, label="", rebin=1,
                 obj=None, norm=False, gg=None, linestyle='solid', color=None):
 
     hist_in = hist_in[reb(rebin)]
@@ -56,16 +63,7 @@ def draw_hist1d(plotting_config, hist_in=None, ax=None, label="", rebin=1,
 
     return l
 
-def get_trigger_label(trigger, plotting_config):
-    try:
-        return plotting_config["trigger_labels"][trigger]
-    except:
-        print(trigger + " name not in plotting_config.yaml, please edit")
-        return trigger
-
 def main(args):
-    with open(args.plotting_config, "r") as stream:
-        plotting_config = yaml.safe_load(stream)
 
     hist_result = load(args.input)
 
@@ -78,11 +76,6 @@ def main(args):
 
     fig, ax = plt.subplots(figsize=(14, 8))
 
-    if "ScoutingMuonVtx_ScoutingMuonVtx_mass" in plotting_config["rebin"]:
-        rebin = plotting_config["rebin"]["ScoutingMuonVtx_ScoutingMuonVtx_mass"]
-    else:
-        rebin = 1
-
     triggers = [
         "DST_PFScouting_AXONominal",
         "DST_PFScouting_AXOVTight",
@@ -90,16 +83,12 @@ def main(args):
     ]
 
     for trigger in triggers:
-        trigger_label = get_trigger_label(trigger, plotting_config)
-
-        print(hist_result["hists"]["ScoutingMuonVtx_ScoutingMuonVtx_mass"])
         draw_hist1d(
-            plotting_config,
             hist_in=hist_result["hists"]["ScoutingMuonVtx_ScoutingMuonVtx_mass"]["2024I_10", trigger, :],
             ax=ax,
-            label=trigger_label,
-            rebin=rebin,
-            norm=plotting_config["normalized"],
+            label=TRIGGER_LABELS[trigger],
+            rebin=3,
+            norm=NORM,
         )
 
     ax.set_yscale("log")
@@ -107,7 +96,7 @@ def main(args):
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
     ax.legend(loc="upper right", frameon=False, fontsize=16)
-    ax.set_ylabel(f"Events{' [A.U.]' if plotting_config['normalized'] else ''}", loc="top", fontsize=25)
+    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
     ax.set_xlabel(r"HLT Scouting $m_{\mu\mu}$ [GeV]", fontsize=25)
     ax.text(60, 4e4, r"$p_T^\mu>3$ GeV, $|\eta|<2.4$", fontsize=16)
     
@@ -141,11 +130,6 @@ if __name__ == "__main__":
         "--output",
         required=True,
         help="Full output path prefix, e.g. plots/dimuon_mass (extensions .pdf/.png added automatically)"
-    )
-    parser.add_argument(
-        "--plotting-config",
-        default="plotting_config.yaml",
-        help="yaml file containing plotting options"
     )
     parser.add_argument("--x-min", type=float, default=None, help="x-axis minimum")
     parser.add_argument("--x-max", type=float, default=None, help="x-axis maximum")

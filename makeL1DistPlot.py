@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 import os
-import yaml
 
 hep.style.use('CMS')
 

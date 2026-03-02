@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import mplhep as hep
 import os
-import yaml
 
 hep.style.use('CMS')
 
@@ -16,6 +15,14 @@ triggers = [
     "DST_PFScouting_DoubleMuon",
     "DST_PFScouting_AXONominal",
 ]
+
+TRIGGER_LABELS = {
+    'DST_PFScouting_ZeroBias' : 'Zero Bias',
+    'DST_PFScouting_JetHT': 'Jet HT',
+    'DST_PFScouting_CICADAMedium': 'CICADA Medium',
+    'DST_PFScouting_DoubleMuon': 'Double Muon',
+    'DST_PFScouting_AXONominal': 'AXO Medium'
+}
 
 # Default axis limits and x-labels per object type
 OBJ_DEFAULTS = {
@@ -40,7 +47,7 @@ OBJ_DEFAULTS = {
 }
 
 
-def draw_hist1d(plotting_config, hist_in=None, ax=None, label="", rebin=1,
+def draw_hist1d(hist_in=None, ax=None, label="", rebin=1,
                 obj=None, norm=False, gg=None, linestyle='solid', color=None):
 
     hist_in = hist_in[reb(rebin)]
@@ -82,7 +89,7 @@ def draw_hist1d(plotting_config, hist_in=None, ax=None, label="", rebin=1,
     return l
 
 
-def draw_ratio(plotting_config, hist_num, hist_denom, ax=None, color=None,
+def draw_ratio(hist_num, hist_denom, ax=None, color=None,
                label="", rebin=1, norm=False, gg=None):
 
     hist_num = hist_num[reb(rebin)]
@@ -125,16 +132,7 @@ def draw_ratio(plotting_config, hist_num, hist_denom, ax=None, color=None,
     )
     return l
 
-
-def get_trigger_label(trigger, plotting_config):
-    try:
-        return plotting_config["trigger_labels"][trigger]
-    except:
-        print(trigger + " name not in plotting_config.yaml, please edit")
-        return trigger
-
-
-def make_plot(hist_result, thing_to_plot, triggers, x_label, plotting_config,
+def make_plot(hist_result, thing_to_plot, triggers, x_label,
               x_min, x_max, y_min, y_max, output,
               rebin=1, log_scale=True, norm=False, leg_loc='upper right'):
     print(thing_to_plot)
@@ -146,9 +144,8 @@ def make_plot(hist_result, thing_to_plot, triggers, x_label, plotting_config,
     for trigger in triggers:
         print(trigger)
         color = 'k' if trigger == "DST_PFScouting_ZeroBias" else None
-        trigger_label = get_trigger_label(trigger, plotting_config)
+        trigger_label = TRIGGER_LABELS[trigger]
         l = draw_hist1d(
-            plotting_config,
             hist_in=hist_result['hists'][thing_to_plot][:, trigger, :].integrate("dataset"),
             ax=ax[0],
             label=trigger_label,
@@ -160,7 +157,6 @@ def make_plot(hist_result, thing_to_plot, triggers, x_label, plotting_config,
             color = l[0].get_color()
             hist_num = hist_result['hists'][thing_to_plot][:, trigger, :].integrate("dataset")
             draw_ratio(
-                plotting_config,
                 hist_num,
                 hist_denom,
                 ax=ax[1],
@@ -182,7 +178,7 @@ def make_plot(hist_result, thing_to_plot, triggers, x_label, plotting_config,
     ax[0].legend(loc=leg_loc, frameon=False, fontsize=12)
 
     hep.cms.label(
-        plotting_config["cms_label"],
+        "Preliminary",
         data=True,
         lumi=11.45,
         year="2024",
@@ -204,8 +200,6 @@ def make_plot(hist_result, thing_to_plot, triggers, x_label, plotting_config,
 
 
 def main(args):
-    with open(args.plotting_config, "r") as stream:
-        plotting_config = yaml.safe_load(stream)
 
     hist_result = load(args.input)
 
@@ -221,7 +215,6 @@ def main(args):
         defaults["hist_key"],
         triggers,
         defaults["x_label"],
-        plotting_config,
         x_min, x_max, y_min, y_max,
         args.output,
         rebin=1,
@@ -250,11 +243,6 @@ if __name__ == "__main__":
         "--output",
         required=True,
         help="Full output path prefix, e.g. plots/mult_L1Mu (extensions .pdf/.png added automatically)"
-    )
-    parser.add_argument(
-        "--plotting-config",
-        default="plotting_config.yaml",
-        help="yaml file containing plotting options"
     )
     parser.add_argument("--x-min", type=float, default=None, help="x-axis minimum")
     parser.add_argument("--x-max", type=float, default=None, help="x-axis maximum")

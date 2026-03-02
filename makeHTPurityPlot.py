@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
 import os
-import yaml
 
 hep.style.use('CMS')
 
@@ -15,7 +14,16 @@ DEFAULTS = {
     "y_min": 5e0, "y_max": 4e7,
 }
 
-def draw_hist1d(plotting_config, hist_in=None, ax=None, label="", rebin=1,
+TRIGGER_LABELS = {
+    "DST_PFScouting_AXONominal": 'AXO Medium',
+    "DST_PFScouting_CICADAMedium": 'CICADA Medium',
+    "pure_L1_DST_PFScouting_AXONominal": 'AXO Medium pure w.r.t. L1',
+    "pure_L1_DST_PFScouting_CICADAMedium": 'CICADA Medium pure w.r.t. L1',
+}
+
+NORM = False
+
+def draw_hist1d(hist_in=None, ax=None, label="", rebin=1,
                 obj=None, norm=False, gg=None, linestyle='solid', color=None):
 
     hist_in = hist_in[reb(rebin)]
@@ -56,19 +64,9 @@ def draw_hist1d(plotting_config, hist_in=None, ax=None, label="", rebin=1,
 
     return l
 
-def get_trigger_label(trigger, plotting_config):
-    try:
-        return plotting_config["trigger_labels"][trigger]
-    except:
-        print(trigger + " name not in plotting_config.yaml, please edit")
-        return trigger
-
 def main(args):
-    with open(args.plotting_config, "r") as stream:
-        plotting_config = yaml.safe_load(stream)
 
     hist_result = load(args.input)
-    print(hist_result)
 
     defaults = DEFAULTS
 
@@ -79,11 +77,6 @@ def main(args):
 
     fig, ax = plt.subplots(figsize=(9, 7))
 
-    if "l1_ht" in plotting_config["rebin"]:
-        rebin = plotting_config["rebin"]["l1_ht"]
-    else:
-        rebin = 1
-
     triggers = [
         "DST_PFScouting_AXONominal",
         "DST_PFScouting_CICADAMedium",
@@ -92,22 +85,20 @@ def main(args):
     ]
 
     for trigger in triggers:
-        trigger_label = get_trigger_label(trigger, plotting_config)
 
         draw_hist1d(
-            plotting_config,
             hist_in=hist_result["hists"]["l1_ht"]["2024I_paper", trigger, :],
             ax=ax,
-            label=trigger_label,
-            rebin=rebin,
-            norm=plotting_config["normalized"],
+            label=TRIGGER_LABELS[trigger],
+            rebin=5,
+            norm=NORM,
         )
 
     ax.set_yscale("log")
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
     ax.legend(loc="upper right", frameon=False, fontsize=16)
-    ax.set_ylabel(f"Events{' [A.U.]' if plotting_config['normalized'] else ''}", loc="top", fontsize=25)
+    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
     ax.set_xlabel(r"L1 $H_T$ [GeV]", fontsize=25)
     
     hep.cms.label(
@@ -140,11 +131,6 @@ if __name__ == "__main__":
         "--output",
         required=True,
         help="Full output path prefix, e.g. plots/l1_ht_purity (extensions .pdf/.png added automatically)"
-    )
-    parser.add_argument(
-        "--plotting-config",
-        default="plotting_config.yaml",
-        help="yaml file containing plotting options"
     )
     parser.add_argument("--x-min", type=float, default=None, help="x-axis minimum")
     parser.add_argument("--x-max", type=float, default=None, help="x-axis maximum")
