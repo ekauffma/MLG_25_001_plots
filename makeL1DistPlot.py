@@ -1,6 +1,5 @@
 import argparse
-from coffea.util import load
-from hist.tag import rebin as reb
+import uproot
 import matplotlib.pyplot as plt
 import mplhep as hep
 import numpy as np
@@ -8,7 +7,6 @@ import os
 
 hep.style.use('CMS')
 
-# Default axis limits and x-labels per object type
 OBS_DEFAULTS = {
     "ht": {
         "rebin": 5,
@@ -27,58 +25,56 @@ OBS_DEFAULTS = {
 }
 
 TRIGGER_LABELS = {
-    'DST_PFScouting_ZeroBias' : 'Zero Bias',
+    'DST_PFScouting_ZeroBias': 'Zero Bias',
     'DST_PFScouting_ZeroBias_DST_PFScouting_AXONominal': 'Zero Bias & AXO Medium',
-    'DST_PFScouting_ZeroBias_DST_PFScouting_CICADAMedium': 'Zero Bias & CICADA Medium'
+    'DST_PFScouting_ZeroBias_DST_PFScouting_CICADAMedium': 'Zero Bias & CICADA Medium',
 }
 
 NORM = False
 
-def draw_hist1d(hist_in=None, ax=None, label="", rebin=1,
-                obj=None, norm=False, gg=None, linestyle='solid', color=None):
 
-    hist_in = hist_in[reb(rebin)]
+def load_root_hists(root_file, hist_key, triggers):
+    hists = {}
+    with uproot.open(root_file) as f:
+        for trigger in triggers:
+            key = f"{trigger}_{hist_key}"
+            if key in f:
+                counts, bins = f[key].to_numpy()
+                hists[trigger] = (counts, bins)
+            else:
+                print(f"  WARNING: key '{key}' not found in ROOT file, skipping.")
+    return hists
 
-    hist_data = hist_in.to_numpy()
-    ndim = len(hist_data)
 
-    if ndim == 2:
-        counts, bins = hist_data
+def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
+                norm=False, linestyle='solid', color=None):
+
+    if rebin > 1:
+        counts = counts[:len(counts) - len(counts) % rebin].reshape(-1, rebin).sum(axis=1)
+        bins = bins[::rebin]
+        if len(bins) != len(counts) + 1:
+            bins = np.append(bins[:len(counts)], bins[len(counts)])
+
+    norm_factor = np.sum(counts) * np.diff(bins) if norm else 1
+    _counts = counts / norm_factor if norm else counts
+    errs = np.sqrt(counts) / norm_factor if norm else np.sqrt(counts)
+    _errs = np.where(_counts == 0, 0, errs)
+
+    bin_centres = 0.5 * (bins[1:] + bins[:-1])
+
+    if color is not None:
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color)
     else:
-        counts, _, bins = hist_data
-        counts = np.sum(counts, axis=0)
-
-    if len(counts) > 0:
-        norm_factor = np.sum(counts) * np.diff(bins) if norm else 1
-        _counts = counts / norm_factor if norm else counts
-        errs = np.sqrt(counts) / norm_factor if norm else np.sqrt(counts)
-        _errs = np.where(_counts == 0, 0, errs)
-
-        bin_centres = 0.5 * (bins[1:] + bins[:-1])
-
-        if color is not None:
-            l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color)
-        else:
-            l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="")
-        color = l[0].get_color()
-        ax.errorbar(
-            x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-            color=color, linestyle=linestyle
-        )
-    else:
-        if color is not None:
-            l = ax.errorbar(x=[], y=[], yerr=[], drawstyle="steps-post", color=color)
-        else:
-            l = ax.errorbar(x=[], y=[], yerr=[], drawstyle="steps-post")
-        color = l[0].get_color()
-        ax.errorbar(x=[], y=[], drawstyle="steps-post", label=label, color=color, linestyle=linestyle)
-
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="")
+    color = l[0].get_color()
+    ax.errorbar(
+        x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
+        color=color, linestyle=linestyle
+    )
     return l
 
-def main(args):
 
-    hist_result = load(args.input)
-    print(hist_result)
+def main(args):
 
     defaults = OBS_DEFAULTS[args.observable]
 
@@ -87,24 +83,21 @@ def main(args):
     y_min = args.y_min if args.y_min is not None else defaults["y_min"]
     y_max = args.y_max if args.y_max is not None else defaults["y_max"]
 
-    fig, ax = plt.subplots(figsize=(9, 7))
-
-    rebin = defaults["rebin"]
-
     triggers = [
         "DST_PFScouting_ZeroBias",
         "DST_PFScouting_ZeroBias_DST_PFScouting_AXONominal",
-        "DST_PFScouting_ZeroBias_DST_PFScouting_CICADAMedium"
+        "DST_PFScouting_ZeroBias_DST_PFScouting_CICADAMedium",
     ]
 
+    hists = load_root_hists(args.input, defaults["hist_key"], triggers)
+
+    fig, ax = plt.subplots(figsize=(9, 7))
+
     for trigger in triggers:
-        draw_hist1d(
-            hist_in=hist_result["hists"]["l1_ht"]["2024I", trigger, :],
-            ax=ax,
-            label=TRIGGER_LABELS[trigger],
-            rebin=rebin,
-            norm=NORM,
-        )
+        if trigger not in hists:
+            continue
+        counts, bins = hists[trigger]
+        draw_hist1d(counts, bins, ax=ax, label=TRIGGER_LABELS[trigger], rebin=defaults["rebin"], norm=NORM)
 
     ax.set_yscale("log")
     ax.set_xlim([x_min, x_max])
@@ -112,7 +105,7 @@ def main(args):
     ax.legend(loc="upper right", frameon=False, fontsize=16)
     ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
     ax.set_xlabel(defaults["x_label"], fontsize=25)
-    
+
     hep.cms.label(
         "Preliminary",
         data=True,
@@ -129,6 +122,7 @@ def main(args):
     fig.savefig(f"{args.output}.png", format="png", bbox_inches="tight")
     print(f"Saved {args.output}.pdf and {args.output}.png")
 
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -142,18 +136,18 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input",
-        default="histograms/hist_result_plotD_plotE.pkl",
-        help="Input .pkl histogram file"
+        default="histograms/hist.root",
+        help="Input .root histogram file"
     )
     parser.add_argument(
         "--output",
         required=True,
         help="Full output path prefix, e.g. plots/l1_ht_efficiency (extensions .pdf/.png added automatically)"
     )
-    parser.add_argument("--x-min", type=float, default=None, help="x-axis minimum")
-    parser.add_argument("--x-max", type=float, default=None, help="x-axis maximum")
-    parser.add_argument("--y-min", type=float, default=None, help="y-axis minimum")
-    parser.add_argument("--y-max", type=float, default=None, help="y-axis maximum")
+    parser.add_argument("--x-min", type=float, default=None)
+    parser.add_argument("--x-max", type=float, default=None)
+    parser.add_argument("--y-min", type=float, default=None)
+    parser.add_argument("--y-max", type=float, default=None)
 
     args = parser.parse_args()
     main(args)

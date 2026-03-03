@@ -1,8 +1,8 @@
 import argparse
-from coffea.util import load
-from hist.tag import rebin as reb
-import matplotlib.pyplot as plt
+import uproot
 import numpy as np
+import boost_histogram as bh
+import matplotlib.pyplot as plt
 import mplhep as hep
 import os
 
@@ -47,79 +47,67 @@ OBJ_DEFAULTS = {
 }
 
 
-def draw_hist1d(hist_in=None, ax=None, label="", rebin=1,
-                obj=None, norm=False, gg=None, linestyle='solid', color=None):
+def load_root_hists(root_file, hist_key, triggers):
+    """
+    Load histograms from ROOT file into a dict keyed by trigger name.
+    Returns dict: {trigger: (counts, bins)}
+    """
+    hists = {}
+    with uproot.open(root_file) as f:
+        for trigger in triggers:
+            key = f"{trigger}_{hist_key}"
+            if key in f:
+                h = f[key]
+                counts, bins = h.to_numpy()
+                hists[trigger] = (counts, bins)
+            else:
+                print(f"  WARNING: key '{key}' not found in ROOT file, skipping.")
+    return hists
 
-    hist_in = hist_in[reb(rebin)]
 
-    hist_data = hist_in.to_numpy()
-    ndim = len(hist_data)
+def draw_hist1d(counts, bins, ax=None, label="",
+                norm=False, linestyle='solid', color=None):
 
-    if ndim == 2:
-        counts, bins = hist_data
+    if norm:
+        norm_factor = np.sum(counts) * np.diff(bins)
     else:
-        counts, _, bins = hist_data
-        counts = np.sum(counts, axis=0)
+        norm_factor = 1
 
-    if len(counts) > 0:
-        norm_factor = np.sum(counts) * np.diff(bins) if norm else 1
-        _counts = counts / norm_factor if norm else counts
-        errs = np.sqrt(counts) / norm_factor if norm else np.sqrt(counts)
-        _errs = np.where(_counts == 0, 0, errs)
+    _counts = counts / norm_factor if norm else counts
+    errs = np.sqrt(counts) / norm_factor if norm else np.sqrt(counts)
+    _errs = np.where(_counts == 0, 0, errs)
 
-        bin_centres = 0.5 * (bins[1:] + bins[:-1])
+    bin_centres = 0.5 * (bins[1:] + bins[:-1])
 
-        if color is not None:
-            l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color)
-        else:
-            l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="")
-        color = l[0].get_color()
-        ax.errorbar(
-            x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-            color=color, linestyle=linestyle
-        )
+    if color is not None:
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color)
     else:
-        if color is not None:
-            l = ax.errorbar(x=[], y=[], yerr=[], drawstyle="steps-post", color=color)
-        else:
-            l = ax.errorbar(x=[], y=[], yerr=[], drawstyle="steps-post")
-        color = l[0].get_color()
-        ax.errorbar(x=[], y=[], drawstyle="steps-post", label=label, color=color, linestyle=linestyle)
-
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="")
+    color = l[0].get_color()
+    ax.errorbar(
+        x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
+        color=color, linestyle=linestyle
+    )
     return l
 
 
-def draw_ratio(hist_num, hist_denom, ax=None, color=None,
-               label="", rebin=1, norm=False, gg=None):
+def draw_ratio(counts_num, bins_num, counts_denom, bins_denom, ax=None, color=None,
+               label="", norm=False):
 
-    hist_num = hist_num[reb(rebin)]
-    hist_denom = hist_denom[reb(rebin)]
-
-    data_num = hist_num.to_numpy()
-    data_denom = hist_denom.to_numpy()
-
-    if len(data_denom) == 2:
-        counts_denom, bins = data_denom
-        counts_num, _ = data_num
-    else:
-        counts_denom, _, bins = data_denom
-        counts_num, _, _ = data_num
-        counts_denom = np.sum(counts_denom, axis=0)
-        counts_num = np.sum(counts_num, axis=0)
-
-    norm_factor_denom = np.sum(counts_denom) * np.diff(bins) if norm else 1
+    norm_factor_denom = np.sum(counts_denom) * np.diff(bins_denom) if norm else 1
     counts_denom = counts_denom / norm_factor_denom if norm else counts_denom
     errs_denom = np.sqrt(counts_denom * (1 - counts_denom / norm_factor_denom)) / norm_factor_denom if norm else np.sqrt(counts_denom)
 
-    norm_factor_num = np.sum(counts_num) * np.diff(bins) if norm else 1
+    norm_factor_num = np.sum(counts_num) * np.diff(bins_num) if norm else 1
     counts_num = counts_num / norm_factor_num if norm else counts_num
     errs_num = np.sqrt(counts_num * (1 - counts_num / norm_factor_num)) / norm_factor_num if norm else np.sqrt(counts_num)
 
     denom = np.where(counts_denom == 0, np.nan, counts_denom)
     ratio = counts_num / denom
-    x = 0.5 * (bins[:-1] + bins[1:])
+    x = 0.5 * (bins_num[:-1] + bins_num[1:])
 
-    error = ratio * np.sqrt((errs_num / counts_num)**2 + (errs_denom / counts_denom)**2)
+    error = ratio * np.sqrt((errs_num / np.where(counts_num == 0, np.nan, counts_num))**2 +
+                            (errs_denom / np.where(counts_denom == 0, np.nan, counts_denom))**2)
 
     if color is not None:
         l = ax.errorbar(x=x, y=ratio, yerr=error, linestyle="", color=color)
@@ -127,41 +115,42 @@ def draw_ratio(hist_num, hist_denom, ax=None, color=None,
         l = ax.errorbar(x=x, y=ratio, yerr=error, linestyle="")
     color = l[0].get_color()
     ax.errorbar(
-        x=bins, y=np.append(ratio, ratio[-1]), drawstyle="steps-post", label=label,
+        x=bins_num, y=np.append(ratio, ratio[-1]), drawstyle="steps-post", label=label,
         color=color, linestyle='solid'
     )
     return l
 
-def make_plot(hist_result, thing_to_plot, triggers, x_label,
+
+def make_plot(hists, triggers, x_label,
               x_min, x_max, y_min, y_max, output,
-              rebin=1, log_scale=True, norm=False, leg_loc='upper right'):
-    print(thing_to_plot)
+              log_scale=True, norm=False, leg_loc='upper right'):
 
     fig, ax = plt.subplots(2, figsize=(8, 8), sharex=True, gridspec_kw={'height_ratios': [2, 1]})
     ax[1].plot(np.linspace(x_min, x_max, 10), np.ones(10), '--', color='darkgray')
-    hist_denom = hist_result['hists'][thing_to_plot][:, 'DST_PFScouting_ZeroBias', :].integrate("dataset")
+
+    counts_denom, bins_denom = hists["DST_PFScouting_ZeroBias"]
 
     for trigger in triggers:
-        print(trigger)
+        if trigger not in hists:
+            continue
+        counts, bins = hists[trigger]
         color = 'k' if trigger == "DST_PFScouting_ZeroBias" else None
         trigger_label = TRIGGER_LABELS[trigger]
+
         l = draw_hist1d(
-            hist_in=hist_result['hists'][thing_to_plot][:, trigger, :].integrate("dataset"),
+            counts, bins,
             ax=ax[0],
             label=trigger_label,
-            rebin=rebin,
             norm=norm,
             color=color
         )
         if trigger != "DST_PFScouting_ZeroBias":
             color = l[0].get_color()
-            hist_num = hist_result['hists'][thing_to_plot][:, trigger, :].integrate("dataset")
             draw_ratio(
-                hist_num,
-                hist_denom,
+                counts, bins,
+                counts_denom, bins_denom,
                 ax=ax[1],
                 label=trigger_label,
-                rebin=rebin,
                 norm=norm,
                 color=color
             )
@@ -189,7 +178,6 @@ def make_plot(hist_result, thing_to_plot, triggers, x_label,
 
     fig.subplots_adjust(hspace=0)
 
-    # output is used directly as the full path prefix
     out_dir = os.path.dirname(output)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
@@ -201,9 +189,9 @@ def make_plot(hist_result, thing_to_plot, triggers, x_label,
 
 def main(args):
 
-    hist_result = load(args.input)
-
     defaults = OBJ_DEFAULTS[args.object]
+
+    hists = load_root_hists(args.input, defaults["hist_key"], triggers)
 
     x_min = args.x_min if args.x_min is not None else defaults["x_min"]
     x_max = args.x_max if args.x_max is not None else defaults["x_max"]
@@ -211,13 +199,11 @@ def main(args):
     y_max = args.y_max if args.y_max is not None else defaults["y_max"]
 
     make_plot(
-        hist_result,
-        defaults["hist_key"],
+        hists,
         triggers,
         defaults["x_label"],
         x_min, x_max, y_min, y_max,
         args.output,
-        rebin=1,
         log_scale=True,
         norm=True,
     )
@@ -236,8 +222,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input",
-        default="histograms/hist_result_plotA_plotB_plotC.pkl",
-        help="Input .pkl histogram file"
+        default="histograms/hist.root",
+        help="Input .root histogram file"
     )
     parser.add_argument(
         "--output",

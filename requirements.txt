@@ -1,8 +1,7 @@
 snakemake
-coffea>=2025.11.0
-hist>=2.9.0
 mplhep
 numpy
 matplotlib
 rich
 pulp<2.8.0
+uproot
