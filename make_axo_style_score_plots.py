@@ -66,7 +66,7 @@ def main(args):
     # axo_df = ROOT.RDataFrame("axol1tl_v3_AXOScore_plot_info", args.input)
     with open("inputs/CICADA2024_CICADAScore_plot_info.pkl", 'rb') as theFile:
         cicada_plot_dict = pkl.load(theFile)
-    with open("inputs/axol1tl_v3_AXOScore_plot_info.pkl", "rb") as theFile:
+    with open("inputs/axol1tl_v4_AXOScore_plot_info.pkl", "rb") as theFile:
         axo_plot_dict = pkl.load(theFile)
     
     
@@ -84,7 +84,7 @@ def main(args):
     draw_axo_style_score_plot(
         axo_plot_dict,
         args.output,
-        score_name = "AXOL1TL_v3",
+        score_name = "AXOL1TL_v4",
         x_axis_bounds=(0., 2000.0),
         x_axis_label="Emulated AXOL1TL Score",
         working_point_label = "AXOL1TL Nominal",
