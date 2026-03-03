@@ -91,7 +91,7 @@ def main(args):
 
     hists = load_root_hists(args.input, defaults["hist_key"], triggers)
 
-    fig, ax = plt.subplots(figsize=(9, 7))
+    fig, ax = plt.subplots(figsize=(7, 7))
 
     for trigger in triggers:
         if trigger not in hists:
@@ -102,7 +102,7 @@ def main(args):
     ax.set_yscale("log")
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
-    ax.legend(loc="upper right", frameon=False, fontsize=16)
+    ax.legend(loc="upper right", frameon=False, fontsize=18)
     ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
     ax.set_xlabel(defaults["x_label"], fontsize=25)
 
@@ -112,7 +112,7 @@ def main(args):
         lumi=11.45,
         year="2024",
         com=13.6,
-        fontsize=18,
+        fontsize=16,
     )
 
     out_dir = os.path.dirname(args.output)

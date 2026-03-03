@@ -9,14 +9,14 @@ hep.style.use('CMS')
 
 DEFAULTS = {
     "x_min": 0, "x_max": 2000,
-    "y_min": 5e0, "y_max": 4e7,
+    "y_min": 5e0, "y_max": 5e8,
 }
 
 TRIGGER_LABELS = {
     "DST_PFScouting_AXONominal": 'AXO Medium',
     "DST_PFScouting_CICADAMedium": 'CICADA Medium',
-    "pure_L1_DST_PFScouting_AXONominal": 'AXO Medium pure w.r.t. L1',
-    "pure_L1_DST_PFScouting_CICADAMedium": 'CICADA Medium pure w.r.t. L1',
+    "pure_L1_DST_PFScouting_AXONominal": 'AXO Medium Pure',
+    "pure_L1_DST_PFScouting_CICADAMedium": 'CICADA Medium Pure',
 }
 
 NORM = False
@@ -80,7 +80,7 @@ def main(args):
 
     hists = load_root_hists(args.input, "l1_ht", triggers)
 
-    fig, ax = plt.subplots(figsize=(9, 7))
+    fig, ax = plt.subplots(figsize=(7, 7))
 
     for trigger in triggers:
         if trigger not in hists:
@@ -91,7 +91,7 @@ def main(args):
     ax.set_yscale("log")
     ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
-    ax.legend(loc="upper right", frameon=False, fontsize=16)
+    ax.legend(loc="upper right", frameon=False, fontsize=18)
     ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
     ax.set_xlabel(r"L1 $H_T$ [GeV]", fontsize=25)
 
@@ -99,9 +99,9 @@ def main(args):
         "Preliminary",
         data=True,
         lumi=0.83,
-        year="2024 Run 386924",
+        year="Run 386924",
         com=13.6,
-        fontsize=18,
+        fontsize=16,
     )
 
     out_dir = os.path.dirname(args.output)

@@ -30,19 +30,19 @@ OBJ_DEFAULTS = {
         "hist_key": "L1Mu_mult",
         "x_label": r"$N_{\text{L1Mu}}$",
         "x_min": -0.5, "x_max": 8.5,
-        "y_min": 5e-10, "y_max": 1e2,
+        "y_min": 5e-10, "y_max": 5e2,
     },
     "L1EG": {
         "hist_key": "L1EG_mult",
         "x_label": r"$N_{\text{L1EG}}$",
         "x_min": -0.5, "x_max": 12.5,
-        "y_min": 5e-5, "y_max": 5e1,
+        "y_min": 5e-5, "y_max": 5e0,
     },
     "L1Jet": {
         "hist_key": "L1Jet_mult",
         "x_label": r"$N_{\text{L1Jet}}$",
         "x_min": -0.5, "x_max": 12.5,
-        "y_min": 5e-8, "y_max": 5e2,
+        "y_min": 5e-8, "y_max": 5e1,
     },
 }
 
@@ -161,10 +161,10 @@ def make_plot(hists, triggers, x_label,
     if log_scale:
         ax[0].set_yscale("log")
         ax[1].set_yscale("log")
-    ax[0].set_ylabel(f"Events{' [A.U.]' if norm else ''}", loc="top", fontsize=14)
-    ax[1].set_ylabel("Ratio to Zero Bias", loc="top", fontsize=14)
-    ax[1].set_xlabel(x_label, fontsize=14, loc="right")
-    ax[0].legend(loc=leg_loc, frameon=False, fontsize=12)
+    ax[0].set_ylabel(f"Events{' [A.U.]' if norm else ''}", loc="top", fontsize=20)
+    ax[1].set_ylabel("Ratio to Zero Bias", loc="top", fontsize=20)
+    ax[1].set_xlabel(x_label, loc="right", fontsize=20)
+    ax[0].legend(loc=leg_loc, frameon=False, fontsize=16, ncols=3, columnspacing=0.7)
 
     hep.cms.label(
         "Preliminary",
@@ -172,7 +172,7 @@ def make_plot(hists, triggers, x_label,
         lumi=11.45,
         year="2024",
         com=13.6,
-        fontsize=12,
+        fontsize=20,
         ax=ax[0],
     )
 
