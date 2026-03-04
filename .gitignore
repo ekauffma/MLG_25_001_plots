@@ -1,4 +1,7 @@
 *~
 *.png
 *.pdf
+*.pyc
 .snakemake/
+venv/
+plot_env/

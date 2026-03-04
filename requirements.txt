@@ -1,7 +1,11 @@
 snakemake
 mplhep
-numpy
-matplotlib
+numpy<=1.26
+matplotlib<=3.7
 rich
 pulp<2.8.0
+awkward
 uproot
+scikit-learn
+scikit-image
+tqdm
