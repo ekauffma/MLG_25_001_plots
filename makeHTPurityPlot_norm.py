@@ -8,6 +8,8 @@ import os
 
 hep.style.use('CMS')
 
+FONTSIZE = 8
+
 DEFAULTS = {
     "x_min": 0, "x_max": 2000,
     "y_min": 5e-8, "y_max": 5e-2,
@@ -72,7 +74,7 @@ def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
     color = l[0].get_color()
     ax.errorbar(
         x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle=linestyle, linewidth=2,
+        color=color, linestyle=linestyle, linewidth=1,
     )
     return l
 
@@ -93,13 +95,13 @@ def main(args):
 
     hists = load_root_hists(args.input, "l1_ht", triggers)
 
-    fig, ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(2.1, 2.1))
     fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
     hep.cms.label(
         "Preliminary",
         data=True,
         rlabel="2024 (13.6 TeV)",
-        fontsize=22,
+        fontsize=FONTSIZE,
         ax=ax,
     )
 
@@ -130,15 +132,20 @@ def main(args):
                     (0, 0), 1, 1,
                     fill=False,
                     edgecolor=TRIGGER_COLORS[t],
-                    linewidth=2,
+                    linewidth=1,
                     linestyle=linestyle,
                     label=TRIGGER_LABELS[t],
                 )
             )
-    plt.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=22)
+    plt.subplots_adjust(left=0.18, right=0.98, top=0.93, bottom=0.12)
+    plt.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=FONTSIZE)
 
-    plt.ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=22)
-    plt.xlabel(r"L1 $H_T$ [GeV]", loc="right", fontsize=24)
+    plt.ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=FONTSIZE, labelpad=0)
+    plt.xlabel(r"L1 $H_T$ [GeV]", loc="right", fontsize=FONTSIZE, labelpad=2)
+    plt.tick_params(axis='both', which='major', labelsize=FONTSIZE, length=4, pad=2)
+    plt.minorticks_off()
+    for spine in plt.gca().spines.values():
+        spine.set_linewidth(0.8)
 
     out_dir = os.path.dirname(args.output)
     if out_dir:

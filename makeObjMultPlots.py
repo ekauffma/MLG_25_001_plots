@@ -10,6 +10,8 @@ import os
 
 hep.style.use('CMS')
 
+FONTSIZE = 8
+
 triggers = [
     "L1_ZeroBias",
     "L1_DoubleEG_LooseIso20_LooseIso12_er1p5",
@@ -164,7 +166,7 @@ def make_plot(hists, triggers, x_label,
           x_min, x_max, y_min, y_max, y_min_ratio, y_max_ratio, output,
           log_scale=True, norm=False, leg_loc='upper right'):
 
-    fig, ax = plt.subplots(2, figsize=(8, 8), sharex=True, gridspec_kw={'height_ratios': [2, 1]})
+    fig, ax = plt.subplots(2, figsize=(2.1, 2.1), sharex=True, gridspec_kw={'height_ratios': [2, 1]})
     fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
     ax[1].plot(np.linspace(x_min, x_max, 10), np.ones(10), '--', color='darkgray')
 
@@ -216,9 +218,9 @@ def make_plot(hists, triggers, x_label,
     if log_scale:
         ax[0].set_yscale("log")
         ax[1].set_yscale("log")
-    ax[0].set_ylabel(f"Events{' [A.U.]' if norm else ''}", loc="top", fontsize=22)
-    ax[1].set_ylabel("Ratio to Zero Bias", loc="top", fontsize=24)
-    ax[1].set_xlabel(x_label, loc="right", fontsize=24)
+    ax[0].set_ylabel(f"Events{' [A.U.]' if norm else ''}", loc="top", fontsize=FONTSIZE, labelpad=0)
+    ax[1].set_ylabel("Ratio to Zero Bias", loc="top", fontsize=FONTSIZE, labelpad=0)
+    ax[1].set_xlabel(x_label, loc="right", fontsize=FONTSIZE, labelpad=2)
     ax[1].yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10, subs=[1.0], numticks=10))
     ax[1].yaxis.set_minor_locator(matplotlib.ticker.LogLocator(base=10, subs=np.arange(2, 10), numticks=100))
     exp_min = int(np.floor(np.log10(y_min_ratio)))
@@ -238,17 +240,24 @@ def make_plot(hists, triggers, x_label,
         )
         for t in triggers if t in hists
     ]
-    ax[0].legend(handles=legend_handles, loc=leg_loc, frameon=False, fontsize=22, ncols=2, columnspacing=0.7)
+    ax[0].legend(handles=legend_handles, loc=leg_loc, frameon=False, fontsize=FONTSIZE, ncols=2, columnspacing=0.7)
 
     hep.cms.label(
         "Preliminary",
         data=True,
         rlabel="2024 (13.6 TeV)",
-        fontsize=22,
+        fontsize=FONTSIZE,
         ax=ax[0],
     )
 
-    fig.subplots_adjust(hspace=0)
+    ax[0].tick_params(axis='both', which='major', labelsize=FONTSIZE, length=4, pad=2)
+    ax[1].tick_params(axis='both', which='major', labelsize=FONTSIZE, length=4, pad=2)
+    ax[0].minorticks_off()
+    for ax_ in ax:
+        for spine in ax_.spines.values():
+            spine.set_linewidth(0.8)
+
+    fig.subplots_adjust(left=0.18, right=0.98, top=0.93, bottom=0.12, hspace=0)
 
     out_dir = os.path.dirname(output)
     if out_dir:

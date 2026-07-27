@@ -10,6 +10,8 @@ from scipy.special import erf
 
 hep.style.use('CMS')
 
+FONTSIZE = 8
+
 DEFAULTS = {
     "x_min": 1e0, "x_max": 1e3,
     "y_min": 1e-8, "y_max": 1e1,
@@ -93,7 +95,7 @@ def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
     color = l[0].get_color()
     ax.step(
         x=bins[:-1], y=_counts, where="post", label=label,
-        color=color, linestyle=linestyle, zorder=zorder, linewidth=2
+        color=color, linestyle=linestyle, zorder=zorder, linewidth=1
     )
     return l
 
@@ -266,7 +268,8 @@ def main(args):
 
     run_signal_efficiency_fits(hists, triggers, "outputs/dimuon_efficiency_", rebin=1)
 
-    fig, ax = plt.subplots(figsize=(14, 6))
+    fig, ax = plt.subplots(figsize=(6.3, 2.1))
+    fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
 
     for trigger in triggers:
         if trigger not in hists:
@@ -287,13 +290,13 @@ def main(args):
     ]
     
     for x, label in resonances:
-        ax.axvline(x=x, color='black', linestyle='dotted', linewidth=1.5)
+        ax.axvline(x=x, color='black', linestyle='dotted', linewidth=1)
         ax.text(
             x * 0.95, 1e0, label,
             ha='right',
             rotation=0,
             verticalalignment='bottom',
-            fontsize=18
+            fontsize=FONTSIZE
         )
 
 
@@ -306,29 +309,34 @@ def main(args):
             (0, 0), 1, 1,
             fill=False,
             edgecolor=TRIGGER_COLORS[t],
-            linewidth=2,
+            linewidth=1,
             label=TRIGGER_LABELS[t],
         )
         for t in legend_order if t in hists
     ]
-    ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=16)
-    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
-    ax.set_xlabel(r"Reconstructed Muon $m_{\mu\mu}$ [GeV]", fontsize=25)
-    ax.text(250, 5e-2, r"$p_T^\mu>3$ GeV, $|\eta|<2.4$", fontsize=16)
+    fig.subplots_adjust(left=0.06, right=0.99, top=0.93, bottom=0.12)
+    ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=FONTSIZE)
+    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=FONTSIZE, labelpad=0)
+    ax.set_xlabel(r"Reconstructed Muon $m_{\mu\mu}$ [GeV]", fontsize=FONTSIZE, labelpad=2)
+    ax.text(250, 5e-2, r"$p_T^\mu>3$ GeV, $|\eta|<2.4$", fontsize=FONTSIZE)
+    ax.tick_params(axis='both', which='major', labelsize=FONTSIZE, length=4, pad=2)
+    ax.minorticks_off()
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
 
     hep.cms.label(
         "Preliminary",
         data=True,
         rlabel="2024 (13.6 TeV)",
-        fontsize=22,
+        fontsize=FONTSIZE,
         ax=ax,
     )
 
     out_dir = os.path.dirname(args.output)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
-    fig.savefig(f"{args.output}.pdf", format="pdf", bbox_inches="tight")
-    fig.savefig(f"{args.output}.png", format="png", bbox_inches="tight")
+    fig.savefig(f"{args.output}.pdf", format="pdf")
+    fig.savefig(f"{args.output}.png", format="png")
     print(f"Saved {args.output}.pdf and {args.output}.png")
 
 

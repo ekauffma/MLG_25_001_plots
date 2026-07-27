@@ -9,6 +9,8 @@ import os
 
 hep.style.use('CMS')
 
+FONTSIZE = 8
+
 triggers = [
     "DST_PFScouting_ZeroBias",
     "DST_PFScouting_JetHT",
@@ -92,7 +94,7 @@ def draw_hist1d(counts, bins, ax=None, label="",
     color = l[0].get_color()
     ax.errorbar(
         x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle=linestyle
+        color=color, linestyle=linestyle, linewidth=1,
     )
     return l
 
@@ -122,7 +124,7 @@ def draw_ratio(counts_num, bins_num, counts_denom, bins_denom, ax=None, color=No
     color = l[0].get_color()
     ax.errorbar(
         x=bins_num, y=np.append(ratio, ratio[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle='solid'
+        color=color, linestyle='solid', linewidth=1,
     )
     return l
 
@@ -131,7 +133,7 @@ def make_plot(hists, triggers, x_label,
               x_min, x_max, y_min, y_max, output,
               log_scale=True, norm=False, leg_loc='upper right'):
 
-    fig, ax = plt.subplots(2, figsize=(8, 8), sharex=True, gridspec_kw={'height_ratios': [2, 1]})
+    fig, ax = plt.subplots(2, figsize=(2.1, 2.1), sharex=True, gridspec_kw={'height_ratios': [2, 1]})
     fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
     ax[1].plot(np.linspace(x_min, x_max, 10), np.ones(10), '--', color='darkgray')
 
@@ -168,20 +170,20 @@ def make_plot(hists, triggers, x_label,
     if log_scale:
         ax[0].set_yscale("log")
         ax[1].set_yscale("log")
-    ax[0].set_ylabel(f"Events{' [A.U.]' if norm else ''}", loc="top", fontsize=22)
-    ax[1].set_ylabel("Ratio to Zero Bias", loc="top", fontsize=24)
-    ax[1].set_xlabel(x_label, loc="right", fontsize=24)
+    ax[0].set_ylabel(f"Events{' [A.U.]' if norm else ''}", loc="top", fontsize=FONTSIZE, labelpad=0)
+    ax[1].set_ylabel("Ratio to Zero Bias", loc="top", fontsize=FONTSIZE, labelpad=0)
+    ax[1].set_xlabel(x_label, loc="right", fontsize=FONTSIZE, labelpad=2)
     legend_handles = [
         mpatches.Rectangle(
             (0, 0), 1, 1,
             fill=False,
             edgecolor=TRIGGER_COLORS[t],
-            linewidth=2,
+            linewidth=1,
             label=TRIGGER_LABELS[t],
         )
         for t in triggers if t in hists
     ]
-    ax[0].legend(handles=legend_handles, loc=leg_loc, frameon=False, fontsize=22, ncols=2, columnspacing=0.7)
+    ax[0].legend(handles=legend_handles, loc=leg_loc, frameon=False, fontsize=FONTSIZE, ncols=2, columnspacing=0.7)
 
     hep.cms.label(
         "Preliminary",
@@ -189,11 +191,19 @@ def make_plot(hists, triggers, x_label,
         lumi=None,
         year="2024",
         com=13.6,
-        fontsize=22,
+        fontsize=FONTSIZE,
         ax=ax[0],
     )
 
-    fig.subplots_adjust(hspace=0)
+    ax[0].tick_params(axis='both', which='major', labelsize=FONTSIZE, length=4, pad=2)
+    ax[1].tick_params(axis='both', which='major', labelsize=FONTSIZE, length=4, pad=2)
+    ax[0].minorticks_off()
+    ax[1].minorticks_off()
+    for ax_ in ax:
+        for spine in ax_.spines.values():
+            spine.set_linewidth(0.8)
+
+    fig.subplots_adjust(left=0.18, right=0.98, top=0.93, bottom=0.12, hspace=0)
 
     out_dir = os.path.dirname(output)
     if out_dir:

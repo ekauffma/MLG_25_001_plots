@@ -8,6 +8,8 @@ import os
 
 hep.style.use('CMS')
 
+FONTSIZE = 8
+
 DEFAULTS = {
     "x_min": 0, "x_max": 180,
     "y_min": 5e0, "y_max": 5e10,
@@ -66,7 +68,7 @@ def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
     color = l[0].get_color()
     ax.errorbar(
         x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle=linestyle
+        color=color, linestyle=linestyle, linewidth=1,
     )
     return l
 
@@ -87,7 +89,7 @@ def main(args):
 
     hists = load_root_hists(args.input, "l1_met", triggers)
 
-    fig, ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(2.1, 2.1))
     fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
 
     for trigger in triggers:
@@ -112,15 +114,20 @@ def main(args):
                     (0, 0), 1, 1,
                     fill=False,
                     edgecolor=TRIGGER_COLORS[t],
-                    linewidth=2,
+                    linewidth=1,
                     linestyle=linestyle,
                     label=TRIGGER_LABELS[t],
                 )
             )
-    ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=22)
+    fig.subplots_adjust(left=0.18, right=0.98, top=0.93, bottom=0.12)
+    ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=FONTSIZE)
 
-    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=22)
-    ax.set_xlabel(r"L1 $p_T^{\text{miss}}$ [GeV]", loc="right", fontsize=24)
+    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=FONTSIZE, labelpad=0)
+    ax.set_xlabel(r"L1 $p_T^{\text{miss}}$ [GeV]", loc="right", fontsize=FONTSIZE, labelpad=2)
+    ax.tick_params(axis='both', which='major', labelsize=FONTSIZE, length=4, pad=2)
+    ax.minorticks_off()
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.8)
 
     hep.cms.label(
         "Preliminary",
@@ -128,7 +135,7 @@ def main(args):
         lumi=None,
         year="2024",
         com=13.6,
-        fontsize=22,
+        fontsize=FONTSIZE,
         ax=ax,
     )
 
