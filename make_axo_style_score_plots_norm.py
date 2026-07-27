@@ -1,0 +1,146 @@
+import argparse
+import mplhep as hep
+import numpy as np
+import ROOT
+import json
+import pickle as pkl
+import matplotlib.pyplot as plt
+
+from rich.console import Console
+
+console = Console()
+
+def _get_values_edges(h):
+    """Return (values, edges) for either a (values, edges) tuple or a
+    hist/boost-histogram-like object."""
+    if hasattr(h, "to_numpy"):
+        values, edges = h.to_numpy()
+    elif hasattr(h, "values") and hasattr(h, "axes"):
+        values = h.values()
+        edges = h.axes[0].edges
+    else:
+        values, edges = h
+    return np.asarray(values), np.asarray(edges)
+
+
+def draw_axo_style_score_plot(
+        hist_dict,
+        output_path,
+        score_name,
+        x_axis_bounds=(0., 180.0),
+        x_axis_label="Emulated CICADA Score",
+        working_point_label = "CICADA Nominal",
+        pure_label = "CICADA Unique",
+):
+    hep.style.use("CMS")
+    ax = plt.gca()
+    hep.cms.label(
+        "Preliminary",
+        data=True,
+        rlabel="2024 (13.6 TeV)",
+        fontsize=22,
+        ax=ax,
+    )
+
+    overall_hist = hist_dict["overall"]
+    working_point_hist = hist_dict['working']
+    pure_hist = hist_dict['pure']
+
+    overall_values, overall_edges = _get_values_edges(overall_hist)
+    working_values, working_edges = _get_values_edges(working_point_hist)
+    pure_values, pure_edges = _get_values_edges(pure_hist)
+
+    # Normalize all three histograms to the total number of events in
+    # the "All Zero Bias" (overall) histogram.
+    n_total = np.sum(overall_values)
+    norm_overall_values = overall_values / n_total
+    norm_working_values = working_values / n_total
+    norm_pure_values = pure_values / n_total
+
+    overall_fig = hep.histplot(
+        (norm_overall_values, overall_edges),
+        label='All Zero Bias',
+        color="#5790FC"
+    )
+    working_point_fig = hep.histplot(
+        (norm_working_values, working_edges),
+        label=working_point_label,
+        color="#F89C20"
+    )
+    pure_score_fig = hep.histplot(
+        (norm_pure_values, pure_edges),
+        label=pure_label,
+        linestyle='--',
+        color="#E42536",
+    )
+
+    plt.legend(loc='upper right', title='Zero Bias Triggered Events')
+    plt.xlabel(x_axis_label)
+    plt.ylabel('Events [A.U.]')
+    plt.yscale('log')
+    plt.ylim(1.0 / n_total, np.max(norm_overall_values)*100.0)
+
+    hist_name = f'{score_name}_axo_style_score_plot'
+
+    plt.savefig(
+        f'{output_path}/{hist_name}.png'
+    )
+    plt.savefig(
+        f'{output_path}/{hist_name}.pdf'
+    )
+    plt.close()
+
+def main(args):
+    # Get the input file information we need
+    console.log("Making AXO style score plots")
+    with open("inputs/CICADA2024_CICADAScore_plot_info.pkl", 'rb') as theFile:
+        cicada_plot_dict = pkl.load(theFile)
+    with open("inputs/axol1tl_v4_AXOScore_plot_info.pkl", "rb") as theFile:
+        axo_plot_dict = pkl.load(theFile)
+    
+    
+    # Hand each off to the drawing function
+    draw_axo_style_score_plot(
+        cicada_plot_dict,
+        args.output,
+        score_name="CICADA_2024",
+        x_axis_bounds=(0., 180.0),
+        x_axis_label="Emulated CICADA Score",
+        working_point_label = "CICADA Medium",
+        pure_label = "CICADA Unique",
+    )
+
+    draw_axo_style_score_plot(
+        axo_plot_dict,
+        args.output,
+        score_name = "AXOL1TL_v4",
+        x_axis_bounds=(0., 2000.0),
+        x_axis_label="Emulated AXOL1TL Score",
+        working_point_label = "AXOL1TL Medium",
+        pure_label = "AXOL1TL Unique",
+    )
+    
+
+    # Done!
+    console.log("Done with AXO style score plots")
+    
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    # parser.add_argument(
+    #     '--input',
+    #     required=True,
+    #     nargs='?',
+    #     help='Input file to run drawing from'
+    # )
+
+    parser.add_argument(
+        '--output',
+        required=True,
+        nargs='?',
+        help='output directory to store output image files to'
+    )
+
+    args = parser.parse_args()
+
+    main(args)

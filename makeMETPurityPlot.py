@@ -9,7 +9,7 @@ import os
 hep.style.use('CMS')
 
 DEFAULTS = {
-    "x_min": 0, "x_max": 2000,
+    "x_min": 0, "x_max": 180,
     "y_min": 5e0, "y_max": 5e10,
 }
 
@@ -85,11 +85,10 @@ def main(args):
         "pure_L1_DST_PFScouting_CICADAMedium",
     ]
 
-    hists = load_root_hists(args.input, "l1_ht", triggers)
+    hists = load_root_hists(args.input, "l1_met", triggers)
 
-    fig, ax = plt.subplots()
-    hep.cms.text("Preliminary", loc=2)
-    hep.cms.label("Preliminary", data=True, loc=2, year="2024", com=13.6)
+    fig, ax = plt.subplots(figsize=(7, 7))
+    fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
 
     for trigger in triggers:
         if trigger not in hists:
@@ -98,11 +97,11 @@ def main(args):
         counts, bins = hists[trigger]
         if 'pure' in trigger: linestyle='dashed'
         else: linestyle='solid'
-        draw_hist1d(counts, bins, ax=ax, label=TRIGGER_LABELS[trigger], rebin=5, norm=NORM, color=color, linestyle=linestyle)
+        draw_hist1d(counts, bins, ax=ax, label=TRIGGER_LABELS[trigger], rebin=1, norm=NORM, color=color, linestyle=linestyle)
 
-    plt.yscale("log")
-    plt.xlim([x_min, x_max])
-    plt.ylim([y_min, y_max])
+    ax.set_yscale("log")
+    ax.set_xlim([x_min, x_max])
+    ax.set_ylim([y_min, y_max])
     legend_handles = []
     for t in triggers:
         if t in hists:
@@ -118,10 +117,19 @@ def main(args):
                     label=TRIGGER_LABELS[t],
                 )
             )
-    plt.legend(handles=legend_handles, loc="upper right")
+    ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=18)
 
-    plt.ylabel(f"Events{' [A.U.]' if NORM else ''}")
-    plt.xlabel(r"L1 $H_T$ [GeV]")
+    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
+    ax.set_xlabel(r"L1 $p_T^{\text{miss}}$ [GeV]", fontsize=25)
+
+    hep.cms.label(
+        "Preliminary",
+        data=True,
+        lumi=None,
+        year="2024",
+        com=13.6,
+        fontsize=18,
+    )
 
     out_dir = os.path.dirname(args.output)
     if out_dir:
@@ -134,7 +142,7 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Make a plot of L1 HT for AXO and CICADA including pure events"
+        description="Make a plot of L1 MET for AXO and CICADA including pure events"
     )
     parser.add_argument(
         "--input",
@@ -144,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output",
         required=True,
-        help="Full output path prefix, e.g. plots/l1_ht_purity (extensions .pdf/.png added automatically)"
+        help="Full output path prefix, e.g. plots/l1_met_purity (extensions .pdf/.png added automatically)"
     )
     parser.add_argument("--x-min", type=float, default=None)
     parser.add_argument("--x-max", type=float, default=None)

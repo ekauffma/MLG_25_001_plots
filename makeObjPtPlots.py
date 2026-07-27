@@ -3,7 +3,6 @@ import uproot
 import numpy as np
 import boost_histogram as bh
 import matplotlib.pyplot as plt
-import matplotlib.ticker
 import matplotlib.patches as mpatches
 import mplhep as hep
 import os
@@ -11,77 +10,45 @@ import os
 hep.style.use('CMS')
 
 triggers = [
-    "L1_ZeroBias",
-    "L1_DoubleEG_LooseIso20_LooseIso12_er1p5",
-    "L1_DoubleMu_15_7",
-    "L1_HTT280er",
-    "L1_AXO_Nominal",
-    "L1_CICADA_Medium",
+    "DST_PFScouting_ZeroBias",
+    "DST_PFScouting_JetHT",
+    "DST_PFScouting_CICADAMedium",
+    "DST_PFScouting_DoubleMuon",
+    "DST_PFScouting_DoubleEG",
+    "DST_PFScouting_AXONominal",
 ]
 
 TRIGGER_LABELS = {
-    "L1_ZeroBias": "Zero Bias",
-    "L1_DoubleEG_LooseIso20_LooseIso12_er1p5": "Double $e\gamma$",
-    "L1_DoubleMu_15_7": "Double Muon",
-    "L1_HTT280er": "Jet $H_T$",
-    "L1_AXO_Nominal": "AXOL1TL",
-    "L1_CICADA_Medium": "CICADA",
+    'DST_PFScouting_ZeroBias' : 'Zero Bias',
+    'DST_PFScouting_JetHT': 'Jet $H_T$',
+    'DST_PFScouting_CICADAMedium': 'CICADA',
+    'DST_PFScouting_DoubleMuon': 'Double Muon',
+    'DST_PFScouting_DoubleEG': 'Double $e\gamma$',
+    'DST_PFScouting_AXONominal': 'AXO'
 }
 
 TRIGGER_COLORS = {
-    'L1_ZeroBias' : '#1845fb',
-    'L1_HTT280er': '#ff5e02',
-    'L1_CICADA_Medium': '#c91f16',
-    'L1_DoubleMu_15_7': '#578dff',
-    'L1_DoubleEG_LooseIso20_LooseIso12_er1p5': '#adad7d',
-    'L1_AXO_Nominal': '#86c8dd'
-}
-
-TRIGGER_LINEWIDTH = {
-    'L1_ZeroBias' : 1,
-    'L1_HTT280er': 1,
-    'L1_CICADA_Medium': 3,
-    'L1_DoubleMu_15_7': 1,
-    'L1_DoubleEG_LooseIso20_LooseIso12_er1p5': 1,
-    'L1_AXO_Nominal': 3
+    'DST_PFScouting_ZeroBias' : '#1845fb',
+    'DST_PFScouting_JetHT': '#ff5e02',
+    'DST_PFScouting_CICADAMedium': '#c91f16',
+    'DST_PFScouting_DoubleMuon': '#578dff',
+    'DST_PFScouting_DoubleEG': '#adad7d',
+    'DST_PFScouting_AXONominal': '#86c8dd'
 }
 
 # Default axis limits and x-labels per object type
 OBJ_DEFAULTS = {
     "L1Mu": {
-    "hist_key": "L1Mu_mult",
-    "x_label": r"L1 Muon Multiplicity",
-    "x_min": -0.5, "x_max": 8.5,
-    "y_min": 5e-10, "y_max": 5e6,
-    "y_min_ratio": 1e-1, "y_max_ratio": 1e4,
+        "hist_key": "L1Mu_0_pt",
+        "x_label": r"L1 Muon $p_T$ [GeV]",
+        "x_min": 0.0, "x_max": 100,
+        "y_min": 5e-7, "y_max": 5e5,
     },
-    "L1EG": {
-    "hist_key": "L1EG_mult",
-    "x_label": r"L1 EG Multiplicity",
-    "x_min": -0.5, "x_max": 12.5,
-    "y_min": 5e-5, "y_max": 5e1,
-    "y_min_ratio": 1e-3, "y_max_ratio": 1e2,
-    },
-    "L1Jet": {
-    "hist_key": "L1Jet_mult",
-    "x_label": "L1 Jet multiplicity",
-    "x_min": -0.5, "x_max": 10.5,
-    "y_min": 5e-8, "y_max": 5e4,
-    "y_min_ratio": 1e-5, "y_max_ratio": 1e5,
-    },
-    "L1HT": {
-    "hist_key": "l1_ht",
-    "x_label": r"L1 $H_T$ [GeV]",
-    "x_min": 0, "x_max": 1000,
-    "y_min": 5e-10, "y_max": 5e2,
-    "y_min_ratio": 1e-3, "y_max_ratio": 1e5,
-    },
-    "L1MET": {
-    "hist_key": "l1_met",
-    "x_label": r"L1 $p_T^{\text{miss}}$ [GeV]",
-    "x_min": 0, "x_max": 180,
-    "y_min": 5e-10, "y_max": 5e2,
-    "y_min_ratio": 1e-2, "y_max_ratio": 1e5,
+    "ScoutingMuonVtx": {
+        "hist_key": "ScoutingMuonVtx_0_pt",
+        "x_label": r"Scouting Muon $p_T$ [GeV]",
+        "x_min": 0.0, "x_max": 100,
+        "y_min": 5e-7, "y_max": 5e5,
     },
 }
 
@@ -105,7 +72,7 @@ def load_root_hists(root_file, hist_key, triggers):
 
 
 def draw_hist1d(counts, bins, ax=None, label="",
-        norm=False, linestyle='solid', color=None, linewidth=1):
+                norm=False, linestyle='solid', color=None):
 
     if norm:
         norm_factor = np.sum(counts) * np.diff(bins)
@@ -119,19 +86,19 @@ def draw_hist1d(counts, bins, ax=None, label="",
     bin_centres = 0.5 * (bins[1:] + bins[:-1])
 
     if color is not None:
-        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color, linewidth=linewidth)
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color)
     else:
-        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", linewidth=linewidth)
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="")
     color = l[0].get_color()
     ax.errorbar(
         x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle=linestyle, linewidth=linewidth
+        color=color, linestyle=linestyle
     )
     return l
 
 
-def draw_ratio(counts_num, bins_num, counts_denom, bins_denom, ax=None, color=None, linewidth=1,
-           label="", norm=False):
+def draw_ratio(counts_num, bins_num, counts_denom, bins_denom, ax=None, color=None,
+               label="", norm=False):
 
     norm_factor_denom = np.sum(counts_denom) * np.diff(bins_denom) if norm else 1
     counts_denom = counts_denom / norm_factor_denom if norm else counts_denom
@@ -146,7 +113,7 @@ def draw_ratio(counts_num, bins_num, counts_denom, bins_denom, ax=None, color=No
     x = 0.5 * (bins_num[:-1] + bins_num[1:])
 
     error = ratio * np.sqrt((errs_num / np.where(counts_num == 0, np.nan, counts_num))**2 +
-                (errs_denom / np.where(counts_denom == 0, np.nan, counts_denom))**2)
+                            (errs_denom / np.where(counts_denom == 0, np.nan, counts_denom))**2)
 
     if color is not None:
         l = ax.errorbar(x=x, y=ratio, yerr=error, linestyle="", color=color)
@@ -155,32 +122,20 @@ def draw_ratio(counts_num, bins_num, counts_denom, bins_denom, ax=None, color=No
     color = l[0].get_color()
     ax.errorbar(
         x=bins_num, y=np.append(ratio, ratio[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle='solid', linewidth=linewidth,
+        color=color, linestyle='solid'
     )
     return l
 
 
 def make_plot(hists, triggers, x_label,
-          x_min, x_max, y_min, y_max, y_min_ratio, y_max_ratio, output,
-          log_scale=True, norm=False, leg_loc='upper right'):
+              x_min, x_max, y_min, y_max, output,
+              log_scale=True, norm=False, leg_loc='upper right'):
 
     fig, ax = plt.subplots(2, figsize=(8, 8), sharex=True, gridspec_kw={'height_ratios': [2, 1]})
     fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
     ax[1].plot(np.linspace(x_min, x_max, 10), np.ones(10), '--', color='darkgray')
 
-    counts_denom, bins_denom = hists["L1_ZeroBias"]
-
-    # Compute all ratio values to determine y range for ratio panel
-    all_ratios = []
-    for trigger in triggers:
-        if trigger == "L1_ZeroBias" or trigger not in hists:
-            continue
-        counts, bins = hists[trigger]
-        denom = np.where(counts_denom == 0, np.nan, counts_denom)
-        ratio = counts / denom
-        finite = ratio[np.isfinite(ratio) & (ratio > 0)]
-        if len(finite):
-            all_ratios.extend(finite)
+    counts_denom, bins_denom = hists["DST_PFScouting_ZeroBias"]
 
     for trigger in triggers:
         if trigger not in hists:
@@ -194,10 +149,9 @@ def make_plot(hists, triggers, x_label,
             ax=ax[0],
             label=trigger_label,
             norm=norm,
-            color=color,
-            linewidth=TRIGGER_LINEWIDTH[trigger],
+            color=color
         )
-        if trigger != "L1_ZeroBias":
+        if trigger != "DST_PFScouting_ZeroBias":
             color = l[0].get_color()
             draw_ratio(
                 counts, bins,
@@ -205,13 +159,11 @@ def make_plot(hists, triggers, x_label,
                 ax=ax[1],
                 label=trigger_label,
                 norm=norm,
-                color=color,
-                linewidth=TRIGGER_LINEWIDTH[trigger]
+                color=color
             )
 
     ax[0].set_xlim([x_min, x_max])
     ax[0].set_ylim([y_min, y_max])
-    ax[1].set_ylim([y_min_ratio, y_max_ratio])
 
     if log_scale:
         ax[0].set_yscale("log")
@@ -219,21 +171,12 @@ def make_plot(hists, triggers, x_label,
     ax[0].set_ylabel(f"Events{' [A.U.]' if norm else ''}", loc="top", fontsize=22)
     ax[1].set_ylabel("Ratio to Zero Bias", loc="top", fontsize=24)
     ax[1].set_xlabel(x_label, loc="right", fontsize=24)
-    ax[1].yaxis.set_major_locator(matplotlib.ticker.LogLocator(base=10, subs=[1.0], numticks=10))
-    ax[1].yaxis.set_minor_locator(matplotlib.ticker.LogLocator(base=10, subs=np.arange(2, 10), numticks=100))
-    exp_min = int(np.floor(np.log10(y_min_ratio)))
-    exp_max = int(np.ceil(np.log10(y_max_ratio)))
-    labeled_exps = set(range(exp_min, exp_max + 1, 2))
-    ax[1].yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(
-        lambda x, pos: f'$10^{{{int(round(np.log10(x)))}}}$' if int(round(np.log10(x))) in labeled_exps else ''
-    ))
-    ax[1].yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     legend_handles = [
         mpatches.Rectangle(
             (0, 0), 1, 1,
             fill=False,
             edgecolor=TRIGGER_COLORS[t],
-            linewidth=TRIGGER_LINEWIDTH[t],
+            linewidth=2,
             label=TRIGGER_LABELS[t],
         )
         for t in triggers if t in hists
@@ -243,7 +186,9 @@ def make_plot(hists, triggers, x_label,
     hep.cms.label(
         "Preliminary",
         data=True,
-        rlabel="2024 (13.6 TeV)",
+        lumi=None,
+        year="2024",
+        com=13.6,
         fontsize=22,
         ax=ax[0],
     )
@@ -269,14 +214,12 @@ def main(args):
     x_max = args.x_max if args.x_max is not None else defaults["x_max"]
     y_min = args.y_min if args.y_min is not None else defaults["y_min"]
     y_max = args.y_max if args.y_max is not None else defaults["y_max"]
-    y_min_ratio = args.y_min_ratio if args.y_min_ratio is not None else defaults["y_min_ratio"]
-    y_max_ratio = args.y_max_ratio if args.y_max_ratio is not None else defaults["y_max_ratio"]
 
     make_plot(
         hists,
         triggers,
         defaults["x_label"],
-        x_min, x_max, y_min, y_max, y_min_ratio, y_max_ratio,
+        x_min, x_max, y_min, y_max,
         args.output,
         log_scale=True,
         norm=True,
@@ -291,7 +234,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--object",
         required=True,
-        choices=["L1Mu", "L1EG", "L1Jet", "L1HT", "L1MET"],
+        choices=["L1Mu", "ScoutingMuonVtx"],
         help="Which object type to plot"
     )
     parser.add_argument(
@@ -308,8 +251,6 @@ if __name__ == "__main__":
     parser.add_argument("--x-max", type=float, default=None, help="x-axis maximum")
     parser.add_argument("--y-min", type=float, default=None, help="y-axis minimum")
     parser.add_argument("--y-max", type=float, default=None, help="y-axis maximum")
-    parser.add_argument("--y-min-ratio", type=float, default=None, help="ratio y-axis minimum")
-    parser.add_argument("--y-max-ratio", type=float, default=None, help="ratio y-axis maximum")
 
     args = parser.parse_args()
     main(args)

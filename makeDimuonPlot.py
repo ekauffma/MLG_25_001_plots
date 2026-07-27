@@ -11,13 +11,13 @@ from scipy.special import erf
 hep.style.use('CMS')
 
 DEFAULTS = {
-    "x_min": 5e-2, "x_max": 1e3,
-    "y_min": 1e-7, "y_max": 1e2,
+    "x_min": 1e0, "x_max": 1e3,
+    "y_min": 1e-8, "y_max": 1e1,
 }
 
 TRIGGER_LABELS = {
-    'DST_PFScouting_ZeroBias': 'Zero Bias',
     'DST_PFScouting_AXONominal': 'AXOL1TL',
+    'DST_PFScouting_ZeroBias': 'Zero Bias',
 }
 
 TRIGGER_COLORS = {
@@ -49,6 +49,11 @@ RESONANCE_FITS = {
     },
 }
 
+TRIGGER_ZORDER = {
+    'DST_PFScouting_ZeroBias': 2,
+    'DST_PFScouting_AXONominal': 3,
+}
+
 NORM = True
 
 def load_root_hists(root_file, hist_key, triggers):
@@ -65,7 +70,7 @@ def load_root_hists(root_file, hist_key, triggers):
 
 
 def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
-                norm=False, linestyle='solid', color=None, scale=1.0):
+                norm=False, linestyle='solid', color=None, scale=1.0, zorder=2):
 
     if rebin > 1:
         counts = counts[:len(counts) - len(counts) % rebin].reshape(-1, rebin).sum(axis=1)
@@ -82,13 +87,13 @@ def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
     bin_centres = 0.5 * (bins[1:] + bins[:-1])
 
     if color is not None:
-        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color)
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", color=color, zorder=zorder+1)
     else:
-        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="")
+        l = ax.errorbar(x=bin_centres, y=_counts, yerr=_errs, linestyle="", zorder=zorder+1)
     color = l[0].get_color()
-    ax.errorbar(
-        x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle=linestyle
+    ax.step(
+        x=bins[:-1], y=_counts, where="post", label=label,
+        color=color, linestyle=linestyle, zorder=zorder, linewidth=2
     )
     return l
 
@@ -253,8 +258,8 @@ def main(args):
     y_max = args.y_max if args.y_max is not None else DEFAULTS["y_max"]
 
     triggers = [
-        "DST_PFScouting_AXONominal",
         "DST_PFScouting_ZeroBias",
+        "DST_PFScouting_AXONominal",
     ]
 
     hists = load_root_hists(args.input, "ScoutingMuonVtx_ScoutingMuonVtx_mass", triggers)
@@ -269,12 +274,11 @@ def main(args):
         color = TRIGGER_COLORS[trigger]
         counts, bins = hists[trigger]
         scaled_counts = counts * TRIGGER_SCALING.get(trigger, 1)
-        draw_hist1d(scaled_counts, bins, ax=ax, label=TRIGGER_LABELS[trigger], rebin=3, norm=NORM, color=color)
+        draw_hist1d(scaled_counts, bins, ax=ax, label=TRIGGER_LABELS[trigger], rebin=6, norm=NORM, color=color, zorder=TRIGGER_ZORDER[trigger])
 
     ax.set_yscale("log")
     ax.set_xscale("log")
-    x_max_extended = x_max * 3
-    ax.set_xlim([x_min, x_max_extended])
+    ax.set_xlim([x_min, x_max])
     ax.set_ylim([y_min, y_max])
 
     resonances = [
@@ -293,6 +297,10 @@ def main(args):
         )
 
 
+    legend_order = [
+        "DST_PFScouting_ZeroBias",
+        "DST_PFScouting_AXONominal",
+    ]
     legend_handles = [
         mpatches.Rectangle(
             (0, 0), 1, 1,
@@ -301,20 +309,19 @@ def main(args):
             linewidth=2,
             label=TRIGGER_LABELS[t],
         )
-        for t in triggers if t in hists
+        for t in legend_order if t in hists
     ]
     ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=16)
     ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
     ax.set_xlabel(r"Reconstructed Muon $m_{\mu\mu}$ [GeV]", fontsize=25)
-    ax.text(350, 5e-1, r"$p_T^\mu>3$ GeV, $|\eta|<2.4$", fontsize=16)
+    ax.text(250, 5e-2, r"$p_T^\mu>3$ GeV, $|\eta|<2.4$", fontsize=16)
 
     hep.cms.label(
         "Preliminary",
         data=True,
-        lumi=None,
-        year="2024",
-        com=13.6,
-        fontsize=18,
+        rlabel="2024 (13.6 TeV)",
+        fontsize=22,
+        ax=ax,
     )
 
     out_dir = os.path.dirname(args.output)

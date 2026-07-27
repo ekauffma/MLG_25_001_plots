@@ -10,7 +10,7 @@ hep.style.use('CMS')
 
 DEFAULTS = {
     "x_min": 0, "x_max": 2000,
-    "y_min": 5e0, "y_max": 5e10,
+    "y_min": 5e-8, "y_max": 5e-2,
 }
 
 TRIGGER_LABELS = {
@@ -26,7 +26,7 @@ TRIGGER_COLORS = {
     'pure_L1_DST_PFScouting_AXONominal': '#86c8dd'
 }
 
-NORM = False
+NORM = True
 
 
 def load_root_hists(root_file, hist_key, triggers):
@@ -43,7 +43,7 @@ def load_root_hists(root_file, hist_key, triggers):
 
 
 def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
-                norm=False, linestyle='solid', color=None):
+                norm=False, linestyle='solid', color=None, norm_counts=None):
 
     # apply rebin
     if rebin > 1:
@@ -52,7 +52,13 @@ def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
         if len(bins) != len(counts) + 1:
             bins = np.append(bins[:len(counts)], bins[len(counts)])
 
-    norm_factor = np.sum(counts) * np.diff(bins) if norm else 1
+        if norm_counts is not None:
+            norm_counts = norm_counts[:len(norm_counts) - len(norm_counts) % rebin].reshape(-1, rebin).sum(axis=1)
+
+    # Use norm_counts (e.g. the non-pure counterpart) for the normalization
+    # factor if provided, otherwise normalize to this histogram's own sum.
+    counts_for_norm = norm_counts if norm_counts is not None else counts
+    norm_factor = np.sum(counts_for_norm) * np.diff(bins) if norm else 1
     _counts = counts / norm_factor if norm else counts
     errs = np.sqrt(counts) / norm_factor if norm else np.sqrt(counts)
     _errs = np.where(_counts == 0, 0, errs)
@@ -88,17 +94,27 @@ def main(args):
     hists = load_root_hists(args.input, "l1_ht", triggers)
 
     fig, ax = plt.subplots()
-    hep.cms.text("Preliminary", loc=2)
-    hep.cms.label("Preliminary", data=True, loc=2, year="2024", com=13.6)
+    hep.cms.label(
+        "Preliminary",
+        data=True,
+        rlabel="2024 (13.6 TeV)",
+        fontsize=22,
+        ax=ax,
+    )
 
     for trigger in triggers:
         if trigger not in hists:
             continue
         color = TRIGGER_COLORS[trigger]
         counts, bins = hists[trigger]
-        if 'pure' in trigger: linestyle='dashed'
-        else: linestyle='solid'
-        draw_hist1d(counts, bins, ax=ax, label=TRIGGER_LABELS[trigger], rebin=5, norm=NORM, color=color, linestyle=linestyle)
+        if 'pure' in trigger:
+            linestyle = 'dashed'
+            base_trigger = trigger.replace('pure_L1_', '')
+            norm_counts = hists[base_trigger][0] if base_trigger in hists else None
+        else:
+            linestyle = 'solid'
+            norm_counts = None
+        draw_hist1d(counts, bins, ax=ax, label=TRIGGER_LABELS[trigger], rebin=5, norm=NORM, color=color, linestyle=linestyle, norm_counts=norm_counts)
 
     plt.yscale("log")
     plt.xlim([x_min, x_max])
