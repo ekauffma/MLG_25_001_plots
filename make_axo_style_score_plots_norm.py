@@ -33,7 +33,8 @@ def draw_axo_style_score_plot(
         pure_label = "CICADA Unique",
 ):
     hep.style.use("CMS")
-    ax = plt.gca()
+    fig, ax = plt.subplots(figsize=(8, 8))
+    fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
     hep.cms.label(
         "Preliminary",
         data=True,
@@ -60,23 +61,26 @@ def draw_axo_style_score_plot(
     overall_fig = hep.histplot(
         (norm_overall_values, overall_edges),
         label='All Zero Bias',
-        color="#5790FC"
+        color="#5790FC",
+        linewidth=2,
     )
     working_point_fig = hep.histplot(
         (norm_working_values, working_edges),
         label=working_point_label,
-        color="#F89C20"
+        color="#F89C20",
+        linewidth=2,
     )
     pure_score_fig = hep.histplot(
         (norm_pure_values, pure_edges),
         label=pure_label,
         linestyle='--',
         color="#E42536",
+	linewidth=2,
     )
 
-    plt.legend(loc='upper right', title='Zero Bias Triggered Events')
-    plt.xlabel(x_axis_label)
-    plt.ylabel('Events [A.U.]')
+    plt.legend(loc='upper right', title='Zero Bias Triggered Events', frameon=False, fontsize=22)
+    plt.xlabel(x_axis_label, loc="right", fontsize=22)
+    plt.ylabel('Events [A.U.]', loc="top", fontsize=22)
     plt.yscale('log')
     plt.ylim(1.0 / n_total, np.max(norm_overall_values)*100.0)
 
@@ -97,8 +101,8 @@ def main(args):
         cicada_plot_dict = pkl.load(theFile)
     with open("inputs/axol1tl_v4_AXOScore_plot_info.pkl", "rb") as theFile:
         axo_plot_dict = pkl.load(theFile)
-    
-    
+
+
     # Hand each off to the drawing function
     draw_axo_style_score_plot(
         cicada_plot_dict,
@@ -119,11 +123,11 @@ def main(args):
         working_point_label = "AXOL1TL Medium",
         pure_label = "AXOL1TL Unique",
     )
-    
+
 
     # Done!
     console.log("Done with AXO style score plots")
-    
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

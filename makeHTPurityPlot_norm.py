@@ -72,7 +72,7 @@ def draw_hist1d(counts, bins, ax=None, label="", rebin=1,
     color = l[0].get_color()
     ax.errorbar(
         x=bins, y=np.append(_counts, _counts[-1]), drawstyle="steps-post", label=label,
-        color=color, linestyle=linestyle
+        color=color, linestyle=linestyle, linewidth=2,
     )
     return l
 
@@ -93,7 +93,8 @@ def main(args):
 
     hists = load_root_hists(args.input, "l1_ht", triggers)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 8))
+    fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
     hep.cms.label(
         "Preliminary",
         data=True,
@@ -134,10 +135,10 @@ def main(args):
                     label=TRIGGER_LABELS[t],
                 )
             )
-    plt.legend(handles=legend_handles, loc="upper right")
+    plt.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=22)
 
-    plt.ylabel(f"Events{' [A.U.]' if NORM else ''}")
-    plt.xlabel(r"L1 $H_T$ [GeV]")
+    plt.ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=22)
+    plt.xlabel(r"L1 $H_T$ [GeV]", loc="right", fontsize=24)
 
     out_dir = os.path.dirname(args.output)
     if out_dir:

@@ -87,7 +87,7 @@ def main(args):
 
     hists = load_root_hists(args.input, "l1_met", triggers)
 
-    fig, ax = plt.subplots(figsize=(7, 7))
+    fig, ax = plt.subplots(figsize=(8, 8))
     fig.subplots_adjust(left=0.15, right=0.95, top=0.92, bottom=0.12)
 
     for trigger in triggers:
@@ -117,10 +117,10 @@ def main(args):
                     label=TRIGGER_LABELS[t],
                 )
             )
-    ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=18)
+    ax.legend(handles=legend_handles, loc="upper right", frameon=False, fontsize=22)
 
-    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=25)
-    ax.set_xlabel(r"L1 $p_T^{\text{miss}}$ [GeV]", fontsize=25)
+    ax.set_ylabel(f"Events{' [A.U.]' if NORM else ''}", loc="top", fontsize=22)
+    ax.set_xlabel(r"L1 $p_T^{\text{miss}}$ [GeV]", loc="right", fontsize=24)
 
     hep.cms.label(
         "Preliminary",
@@ -128,7 +128,8 @@ def main(args):
         lumi=None,
         year="2024",
         com=13.6,
-        fontsize=18,
+        fontsize=22,
+        ax=ax,
     )
 
     out_dir = os.path.dirname(args.output)

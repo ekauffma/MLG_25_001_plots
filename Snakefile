@@ -83,6 +83,16 @@ rule ht_purity_plot:
    shell:
       "python3 makeHTPurityPlot.py --input inputs/hists_plotF.root --output outputs/l1_ht_purity_nPV10"
 
+rule ht_purity_plot_norm:
+   input:
+      "inputs/hists_plotF.root",
+      "makeHTPurityPlot_norm.py",
+   output:
+      "outputs/l1_ht_purity_nPV10_norm.pdf",
+      "outputs/l1_ht_purity_nPV10_norm.png",
+   shell:
+      "python3 makeHTPurityPlot_norm.py --input inputs/hists_plotF.root --output outputs/l1_ht_purity_nPV10_norm"
+
 rule dimuon_mass_plot:
    input:
       "inputs/hists_plotG.root",
